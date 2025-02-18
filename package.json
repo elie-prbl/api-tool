@@ -1,0 +1,15 @@
+{
+  "name": "com.elie.eliapitool",
+  "version": "1.0.0",
+  "displayName": "Elie API Tool",
+  "description": "This tool offer the possibility to integrate the game to the Elie App",
+  "unity": "2022.3",
+  "unityRelease": "48f1",
+  "author": {
+    "name": "Léo",
+    "email": "leo.gregori95@gmail.com",
+    "url": "https://www.unity.com"
+  },
+  "keywords": [],
+  "type": "tool"
+}
