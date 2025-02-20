@@ -67,7 +67,7 @@ public class APIHandler : MonoBehaviour
         }
 
         string json = JsonUtility.ToJson(bodyMainSuccess);
-        UnityWebRequest www = new UnityWebRequest(_mainApiURL + "/successes/user", "PATCH");
+        UnityWebRequest www = new UnityWebRequest(_mainApiURL + "/successes/user", "POST");
         byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
         www.uploadHandler = new UploadHandlerRaw(jsonToSend);
         www.downloadHandler = new DownloadHandlerBuffer();
