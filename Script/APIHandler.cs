@@ -1,20 +1,35 @@
+using System;
 using System.Collections;
 using System.Runtime.InteropServices;
-using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
 public class APIHandler : MonoBehaviour
 {
-    private string _baseURL = "http://10.49.32.196:8000/";
-    private string _playerId = "987654321";
-    private string _gameId = "1";
+    private string _mainApiURL = "";
+    private string _gameManagerUrl = "";
+    private string _playerId = "";
+    private int _gameId = 0;
 
+    [Serializable]
     public class Body
     {
         public string user_reference;
         public int success_id;
         public bool is_validated;
+    }
+
+    [Serializable]
+    public class Response1
+    {
+        public int id;
+    }
+
+    [Serializable]
+    public class BodyMainSuccess
+    {
+        public string user_uuid;
+        public string success_short_name;
     }
 
 
@@ -26,36 +41,40 @@ public class APIHandler : MonoBehaviour
         _playerId = playerId;
     }
 
-    public void SetGameId(string gameId)
+    public void SetGameId(int gameId)
     {
         _gameId = gameId;
     }
 
-    public void SetBaseUrl(string url)
+    public void SetGameManagerUrl(string gameManagerUrl)
     {
-        _baseURL = url;
+        _gameManagerUrl = gameManagerUrl;
     }
 
-    // Soumettre un score
-    public IEnumerator SubmitScore(int score, System.Action onSuccess, System.Action<string> onError)
+    public void SetMainApiURL(string mainApiUrl)
     {
-        WWWForm form = new WWWForm();
-        form.AddField("sessionId", _gameId);
-        form.AddField("playerId", _playerId);
-        form.AddField("score", score);
+        _mainApiURL = mainApiUrl;
+    }
 
-        UnityWebRequest www = UnityWebRequest.Post(_baseURL + "/unitySDK/", form);
+    public IEnumerator GameEnded(bool isGameWon)
+    {
+        BodyMainSuccess bodyMainSuccess = new BodyMainSuccess();
+        bodyMainSuccess.user_uuid = _playerId;
+        bodyMainSuccess.success_short_name = "PlayGames";
+        if (isGameWon)
+        {
+            bodyMainSuccess.success_short_name = "WinGames";
+        }
+
+        string json = JsonUtility.ToJson(bodyMainSuccess);
+        UnityWebRequest www = new UnityWebRequest(_mainApiURL + "/successes/user", "PATCH");
+        byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
+        www.uploadHandler = new UploadHandlerRaw(jsonToSend);
+        www.downloadHandler = new DownloadHandlerBuffer();
+        www.SetRequestHeader("Content-Type", "application/json");
         yield return www.SendWebRequest();
-        Debug.Log("SubmitScore");
 
-        if (www.result == UnityWebRequest.Result.Success)
-        {
-            onSuccess?.Invoke();
-        }
-        else
-        {
-            onError?.Invoke(www.error);
-        }
+        Quit();
     }
 
     /// <summary>
@@ -65,28 +84,27 @@ public class APIHandler : MonoBehaviour
     /// <param name="onSuccess"></param>
     /// <param name="onError"></param>
     /// <returns></returns>
-    public IEnumerator SubmitAchievement(string successTitle, System.Action onSuccess,
+    public IEnumerator SubmitAchievement(string successTitle, bool achieved, System.Action onSuccess,
         System.Action<string> onError)
     {
 
-        UnityWebRequest request = UnityWebRequest.Get(_baseURL + $"successes/game/{_gameId}/success/{successTitle}");
+        UnityWebRequest request = UnityWebRequest.Get(_gameManagerUrl + $"/successes/game/{_gameId}/success/{successTitle}");
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.Success)
         {
             string result = request.downloadHandler.text;
 
-            // Result to JSON
-            JObject jsonResult = JObject.Parse(result);
+            Response1 jsonResult = JsonUtility.FromJson<Response1>(result);
 
-            int successId = int.Parse(jsonResult["id"]?.ToString());
+            int successId = jsonResult.id;
 
             var body = new Body();
             body.success_id = successId;
-            body.is_validated = true;
+            body.is_validated = achieved;
             body.user_reference = _playerId;
             string json = JsonUtility.ToJson(body);
-            UnityWebRequest www = new UnityWebRequest(_baseURL + "users/successes/", "POST");
+            UnityWebRequest www = new UnityWebRequest(_gameManagerUrl + "/users/successes/", "POST");
             byte[] jsonToSend = new System.Text.UTF8Encoding().GetBytes(json);
             www.uploadHandler = new UploadHandlerRaw(jsonToSend);
             www.downloadHandler = new DownloadHandlerBuffer();

@@ -1,6 +1,6 @@
 {
   "name": "com.elie.eliapitool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Elie API Tool",
   "description": "This tool offer the possibility to integrate the game to the Elie App",
   "unity": "2022.3",
